@@ -1,0 +1,253 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #1a1a24;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.header {
+    text-align: center;
+    width: 100%;
+}
+
+.header h1 {
+    font-size: 2.2rem;
+    margin-bottom: 15px;
+    color: #4db8ff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.scoreboard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #2a2a38;
+    padding: 12px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.player-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    opacity: 0.5;
+}
+
+.player-card.active {
+    opacity: 1;
+    background-color: #3a3a4e;
+    box-shadow: 0 0 10px rgba(77, 184, 255, 0.4);
+    transform: scale(1.05);
+}
+
+.player-name {
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.score {
+    font-size: 0.85rem;
+    color: #aaa;
+    margin-top: 4px;
+}
+
+.status-box {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    padding: 6px 12px;
+    background: #181822;
+    border-radius: 6px;
+}
+
+.board-wrapper {
+    background: #332211;
+    padding: 12px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+}
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    width: min(85vw, 480px);
+    height: min(85vw, 480px);
+    border: 3px solid #442a15;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.square {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    user-select: none;
+}
+
+.square.light {
+    background-color: #f0d9b5;
+}
+
+.square.dark {
+    background-color: #b58863;
+}
+
+.square.selected {
+    background-color: #769656 !important;
+}
+
+.square.valid-move::after {
+    content: '';
+    width: 30%;
+    height: 30%;
+    background-color: rgba(46, 204, 113, 0.85);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(46, 204, 113, 1);
+    position: absolute;
+    pointer-events: none;
+}
+
+.piece {
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: inset 0 -4px 6px rgba(0,0,0,0.4), 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.piece:hover {
+    transform: scale(1.08);
+}
+
+.piece.player1 {
+    background: radial-gradient(circle at 30% 30%, #ffffff, #d0d0d0);
+    border: 2px solid #aaaaaa;
+}
+
+.piece.player2 {
+    background: radial-gradient(circle at 30% 30%, #e74c3c, #962d22);
+    border: 2px solid #78231a;
+}
+
+.piece.king::before {
+    content: '👑';
+    font-size: 1.2rem;
+}
+
+.controls {
+    display: flex;
+    gap: 15px;
+}
+
+.btn {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: #27ae60;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #219150;
+}
+
+.btn-secondary {
+    background-color: #2980b9;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #1f6391;
+}
+
+.btn-outline {
+    background-color: transparent;
+    color: #ccc;
+    border: 1px solid #555;
+}
+
+.btn-outline:hover {
+    background-color: #2a2a38;
+    color: white;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background-color: #222230;
+    padding: 30px;
+    border-radius: 16px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    border: 1px solid #3a3a4e;
+}
+
+.modal-content h2 {
+    margin-bottom: 12px;
+    color: #4db8ff;
+}
+
+.modal-content p {
+    color: #bbb;
+    margin-bottom: 20px;
+}
+
+.modal-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}

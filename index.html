@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Dama</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Modal de Seleção de Modo -->
+        <div id="mode-modal" class="modal">
+            <div class="modal-content">
+                <h2>Jogo da Dama</h2>
+                <p>Escolha o modo de jogo para começar:</p>
+                <div class="modal-buttons">
+                    <button class="btn btn-primary" onclick="startGame('cpu')">🤖 Jogar contra CPU</button>
+                    <button class="btn btn-secondary" onclick="startGame('local')">👥 2 Jogadores (Local)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header / Placar -->
+        <header class="header">
+            <h1>Jogo da Dama</h1>
+            <div class="scoreboard">
+                <div class="player-card p1-card active" id="p1-card">
+                    <span class="player-name">⚪ Brancas</span>
+                    <span class="score" id="p1-score">Peças: 12</span>
+                </div>
+                <div class="status-box" id="status-text">Vez das Brancas</div>
+                <div class="player-card p2-card" id="p2-card">
+                    <span class="player-name" id="p2-name">🔴 Vermelhas</span>
+                    <span class="score" id="p2-score">Peças: 12</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tabuleiro -->
+        <div class="board-wrapper">
+            <div id="board" class="board"></div>
+        </div>
+
+        <!-- Controles -->
+        <div class="controls">
+            <button class="btn btn-outline" onclick="resetGame()">🔄 Reiniciar Partida</button>
+            <button class="btn btn-outline" onclick="showModeModal()">⚙️ Mudar Modo</button>
+        </div>
+
+        <!-- Modal de Fim de Jogo -->
+        <div id="winner-modal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="winner-title">Vitória!</h2>
+                <p id="winner-message">Parabéns!</p>
+                <button class="btn btn-primary" onclick="resetGame()">Jogar Novamente</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
