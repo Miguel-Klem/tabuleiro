@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dama & Xadrez</title>
+    <title>Dama & Xadrez - Chess.com Style</title>
     <style>
         * {
             box-sizing: border-box;
@@ -386,12 +386,12 @@
         </div>
     </div>
 
-    <!-- Modal Fim de Jogo (Xeque-Mate / Vitória) -->
+    <!-- Modal Fim de Jogo -->
     <div id="winner-modal" class="modal-overlay hidden">
         <div class="modal-card">
             <div class="winner-trophy">🏆</div>
-            <h2 id="winner-title">Xeque-mate!</h2>
-            <p id="winner-message">As Brancas venceram a partida.</p>
+            <h2 id="winner-title">Fim de jogo!</h2>
+            <p id="winner-message">Vencedor definido.</p>
             <button class="btn btn-primary" onclick="showSelectionModal()">Jogar Novamente</button>
         </div>
     </div>
@@ -449,7 +449,7 @@
         }
 
         /* -------------------------------------------------------------
-           INICIALIZAÇÃO
+           INICIALIZAÇÃO DO TABULEIRO
         ------------------------------------------------------------- */
         function initDamaBoard() {
             let newBoard = Array(8).fill(null).map(() => Array(8).fill(null));
@@ -480,7 +480,7 @@
         }
 
         /* -------------------------------------------------------------
-           RENDERIZAÇÃO DO TABULEIRO
+           RENDERIZAÇÃO
         ------------------------------------------------------------- */
         function renderBoard() {
             const boardEl = document.getElementById('board');
@@ -488,7 +488,7 @@
 
             const allCurrentMoves = getAllValidMoves(board, currentPlayer);
             
-            // Xeque no Xadrez
+            // Destaque de Xeque no Xadrez
             let kingInCheckSquare = null;
             if (selectedGame === 'xadrez' && isKingInCheck(board, currentPlayer)) {
                 for (let r = 0; r < 8; r++) {
@@ -734,7 +734,7 @@
         }
 
         /* -------------------------------------------------------------
-           LÓGICA DA DAMA (Sem captura para trás em peças simples)
+           LÓGICA DA DAMA (LIBERDADE TOTAL - CAPTURA OPCIONAL)
         ------------------------------------------------------------- */
         function getAllValidMoves(boardState, player) {
             return selectedGame === 'dama' ? getDamaMoves(boardState, player) : getChessMoves(boardState, player);
@@ -742,15 +742,14 @@
 
         function getDamaMoves(boardState, player) {
             let allMoves = [];
-            let maxCaptures = 0;
 
+            // 1. Capturas disponíveis
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const piece = boardState[r][c];
                     if (piece && piece.player === player) {
                         const jumps = findJumpsRecursive(boardState, r, c, player, piece.isKing);
                         for (let j of jumps) {
-                            if (j.capturedCount > maxCaptures) maxCaptures = j.capturedCount;
                             allMoves.push({
                                 from: { r, c },
                                 to: j.to,
@@ -762,17 +761,11 @@
                 }
             }
 
-            // Regra da Maioria (Obrigatório maior sequência)
-            if (maxCaptures > 0) {
-                return allMoves.filter(m => m.capturedCount === maxCaptures);
-            }
-
-            // Movimentos simples
+            // 2. Movimentos simples (Permitidos livremente mesmo que haja capturas)
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const piece = boardState[r][c];
                     if (piece && piece.player === player) {
-                        // REGRA: Peça simples move apenas para frente!
                         const dirs = piece.isKing 
                             ? [[-1,-1],[-1,1],[1,-1],[1,1]] 
                             : (player === 1 ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]]);
@@ -788,7 +781,7 @@
                                 tempBoard[nr][nc] = tempBoard[r][c];
                                 tempBoard[r][c] = null;
                                 
-                                // Coroação em Dama
+                                // Coroação em Dama ao alcançar o fim do tabuleiro
                                 if (!piece.isKing && ((player === 1 && nr === 0) || (player === 2 && nr === 7))) {
                                     tempBoard[nr][nc].isKing = true;
                                 }
@@ -796,6 +789,7 @@
                                 allMoves.push({
                                     from: { r, c },
                                     to: { r: nr, c: nc },
+                                    capturedCount: 0,
                                     finalBoard: tempBoard
                                 });
 
@@ -806,14 +800,23 @@
                     }
                 }
             }
-            return allMoves;
+
+            // Desduplica opções de destino priorizando maior quantidade de capturas
+            let moveMap = new Map();
+            for (let m of allMoves) {
+                let key = `${m.from.r},${m.from.c}->${m.to.r},${m.to.c}`;
+                if (!moveMap.has(key) || moveMap.get(key).capturedCount < m.capturedCount) {
+                    moveMap.set(key, m);
+                }
+            }
+
+            return Array.from(moveMap.values());
         }
 
         function findJumpsRecursive(boardState, r, c, player, isKing) {
             let results = [];
             const opponent = player === 1 ? 2 : 1;
             
-            // REGRA: Peça simples NÃO come para trás! Apenas direções para frente.
             const dirs = isKing 
                 ? [[-1,-1],[-1,1],[1,-1],[1,1]] 
                 : (player === 1 ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]]);
@@ -830,21 +833,19 @@
                             newBoard[r][c] = null;
                             newBoard[mr][mc] = null;
 
-                            // Promove ao chegar na ponta durante captura
                             let becameKing = false;
                             if ((player === 1 && lr === 0) || (player === 2 && lr === 7)) {
                                 newBoard[lr][lc].isKing = true;
                                 becameKing = true;
                             }
 
-                            let nextJumps = findJumpsRecursive(newBoard, lr, lc, player, newBoard[lr][lc].isKing);
+                            results.push({ to: { r: lr, c: lc }, capturedCount: 1, finalBoard: newBoard });
 
-                            if (nextJumps.length > 0) {
+                            if (!becameKing) {
+                                let nextJumps = findJumpsRecursive(newBoard, lr, lc, player, false);
                                 for (let nj of nextJumps) {
                                     results.push({ to: nj.to, capturedCount: 1 + nj.capturedCount, finalBoard: nj.finalBoard });
                                 }
-                            } else {
-                                results.push({ to: { r: lr, c: lc }, capturedCount: 1, finalBoard: newBoard });
                             }
                         }
                     }
@@ -870,14 +871,11 @@
                                 newBoard[r][c] = null;
                                 newBoard[oppPos.r][oppPos.c] = null;
 
-                                let nextJumps = findJumpsRecursive(newBoard, landingR, landingC, player, true);
+                                results.push({ to: { r: landingR, c: landingC }, capturedCount: 1, finalBoard: newBoard });
 
-                                if (nextJumps.length > 0) {
-                                    for (let nj of nextJumps) {
-                                        results.push({ to: nj.to, capturedCount: 1 + nj.capturedCount, finalBoard: nj.finalBoard });
-                                    }
-                                } else {
-                                    results.push({ to: { r: landingR, c: landingC }, capturedCount: 1, finalBoard: newBoard });
+                                let nextJumps = findJumpsRecursive(newBoard, landingR, landingC, player, true);
+                                for (let nj of nextJumps) {
+                                    results.push({ to: nj.to, capturedCount: 1 + nj.capturedCount, finalBoard: nj.finalBoard });
                                 }
                             }
                         }
@@ -889,7 +887,7 @@
         }
 
         /* -------------------------------------------------------------
-           LÓGICA DO XADREZ (Detecção de Xeque / Validação)
+           LÓGICA DO XADREZ
         ------------------------------------------------------------- */
         function isKingInCheck(boardState, player) {
             let kingPos = null;
@@ -928,7 +926,6 @@
                     const piece = boardState[r][c];
                     if (piece && piece.player === player) {
                         const rawMoves = getPieceChessRawMoves(boardState, r, c, piece);
-                        // Filtra apenas movimentos que NÃO deixam o rei em xeque
                         for (let move of rawMoves) {
                             if (!isKingInCheck(move.finalBoard, player)) {
                                 moves.push(move);
@@ -953,7 +950,6 @@
                         newBoard[tr][tc] = newBoard[r][c];
                         newBoard[r][c] = null;
 
-                        // Promoção de Peão
                         if (piece.type === 'P' && (tr === 0 || tr === 7)) {
                             newBoard[tr][tc].type = 'Q';
                         }
@@ -965,7 +961,7 @@
                 return false;
             };
 
-            if (piece.type === 'P') { // Peão
+            if (piece.type === 'P') { 
                 let fr = r + dir;
                 if (fr >= 0 && fr < 8 && boardState[fr][c] === null) {
                     addMoveIfValid(fr, c);
@@ -982,13 +978,13 @@
                         }
                     }
                 }
-            } else if (piece.type === 'N') { // Cavalo
+            } else if (piece.type === 'N') { 
                 const dirs = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
                 for (let [dr, dc] of dirs) addMoveIfValid(r + dr, c + dc);
-            } else if (piece.type === 'K') { // Rei
+            } else if (piece.type === 'K') { 
                 const dirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
                 for (let [dr, dc] of dirs) addMoveIfValid(r + dr, c + dc);
-            } else { // Torre (R), Bispo (B), Rainha (Q)
+            } else { 
                 let dirs = [];
                 if (piece.type === 'R' || piece.type === 'Q') dirs.push([-1,0],[1,0],[0,-1],[0,1]);
                 if (piece.type === 'B' || piece.type === 'Q') dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
