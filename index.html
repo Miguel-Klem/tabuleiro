@@ -3,24 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo de Dama</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Jogo da Dama</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #121218;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .header {
+            text-align: center;
+            width: 100%;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            color: #38ef7d;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1e1e28;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            width: 100%;
+        }
+
+        .player-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            opacity: 0.4;
+        }
+
+        .player-card.active {
+            opacity: 1;
+            background-color: #2c2c3e;
+            box-shadow: 0 0 8px rgba(56, 239, 125, 0.4);
+            transform: scale(1.05);
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .score {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-top: 2px;
+        }
+
+        .status-box {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #11998e;
+            padding: 6px 12px;
+            background: #121218;
+            border-radius: 6px;
+            border: 1px solid #11998e;
+            text-align: center;
+        }
+
+        .board-wrapper {
+            background: #2a1b0e;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            width: min(85vw, 420px);
+            height: min(85vw, 420px);
+            border: 3px solid #3d2815;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .square {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            user-select: none;
+            cursor: pointer;
+        }
+
+        .square.light {
+            background-color: #f0d9b5;
+        }
+
+        .square.dark {
+            background-color: #b58863;
+        }
+
+        .square.selected {
+            background-color: #769656 !important;
+        }
+
+        .square.valid-move::after {
+            content: '';
+            width: 32%;
+            height: 32%;
+            background-color: rgba(46, 204, 113, 0.9);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 1);
+            position: absolute;
+            pointer-events: none;
+        }
+
+        .piece {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.15s ease;
+            box-shadow: inset 0 -3px 5px rgba(0,0,0,0.5), 0 3px 6px rgba(0,0,0,0.4);
+        }
+
+        .piece:hover {
+            transform: scale(1.08);
+        }
+
+        .piece.player1 {
+            background: radial-gradient(circle at 30% 30%, #ffffff, #cccccc);
+            border: 2px solid #999999;
+        }
+
+        .piece.player2 {
+            background: radial-gradient(circle at 30% 30%, #e74c3c, #a93226);
+            border: 2px solid #641e16;
+        }
+
+        .piece.king::before {
+            content: '👑';
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: #121218;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #2980b9, #3498db);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: #ccc;
+            border: 1px solid #444;
+        }
+
+        .btn-outline:hover {
+            background-color: #1e1e28;
+            color: white;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.hidden {
+            display: none !important;
+        }
+
+        .modal-card {
+            background-color: #1e1e28;
+            padding: 28px 24px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 380px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 1px solid #2c2c3e;
+        }
+
+        .modal-card h2 {
+            margin-bottom: 10px;
+            color: #38ef7d;
+            font-size: 1.6rem;
+        }
+
+        .modal-card p {
+            color: #bbb;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+    </style>
 </head>
 <body>
     <div class="game-container">
-        <!-- Modal de Seleção de Modo -->
-        <div id="mode-modal" class="modal">
-            <div class="modal-content">
-                <h2>Jogo da Dama</h2>
-                <p>Escolha o modo de jogo para começar:</p>
-                <div class="modal-buttons">
-                    <button class="btn btn-primary" onclick="startGame('cpu')">🤖 Jogar contra CPU</button>
-                    <button class="btn btn-secondary" onclick="startGame('local')">👥 2 Jogadores (Local)</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Header / Placar -->
         <header class="header">
             <h1>Jogo da Dama</h1>
             <div class="scoreboard">
@@ -36,27 +287,486 @@
             </div>
         </header>
 
-        <!-- Tabuleiro -->
         <div class="board-wrapper">
             <div id="board" class="board"></div>
         </div>
 
-        <!-- Controles -->
         <div class="controls">
-            <button class="btn btn-outline" onclick="resetGame()">🔄 Reiniciar Partida</button>
+            <button class="btn btn-outline" onclick="resetGame()">🔄 Reiniciar</button>
             <button class="btn btn-outline" onclick="showModeModal()">⚙️ Mudar Modo</button>
         </div>
+    </div>
 
-        <!-- Modal de Fim de Jogo -->
-        <div id="winner-modal" class="modal hidden">
-            <div class="modal-content">
-                <h2 id="winner-title">Vitória!</h2>
-                <p id="winner-message">Parabéns!</p>
-                <button class="btn btn-primary" onclick="resetGame()">Jogar Novamente</button>
+    <!-- Modal Seleção de Modo -->
+    <div id="mode-modal" class="modal-overlay">
+        <div class="modal-card">
+            <h2>Jogo da Dama</h2>
+            <p>Escolha o modo para iniciar:</p>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" onclick="startGame('cpu')">🤖 Jogar contra CPU</button>
+                <button class="btn btn-secondary" onclick="startGame('local')">👥 2 Jogadores (Local)</button>
             </div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Modal Fim de Jogo -->
+    <div id="winner-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <h2 id="winner-title">Vitória!</h2>
+            <p id="winner-message">Fim de jogo!</p>
+            <button class="btn btn-primary" onclick="resetGameFromModal()">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script>
+        let board = [];
+        let currentPlayer = 1; // 1: Brancas, 2: Vermelhas / CPU
+        let gameMode = 'cpu';
+        let selectedSquare = null;
+        let activeValidMoves = [];
+        let isGameOver = false;
+
+        function showModeModal() {
+            document.getElementById('mode-modal').classList.remove('hidden');
+        }
+
+        function startGame(mode) {
+            gameMode = mode;
+            document.getElementById('mode-modal').classList.add('hidden');
+            document.getElementById('p2-name').innerText = mode === 'cpu' ? '🤖 CPU' : '🔴 Vermelhas';
+            resetGame();
+        }
+
+        function resetGameFromModal() {
+            document.getElementById('winner-modal').classList.add('hidden');
+            showModeModal();
+        }
+
+        function resetGame() {
+            board = initBoard();
+            currentPlayer = 1;
+            selectedSquare = null;
+            activeValidMoves = [];
+            isGameOver = false;
+            document.getElementById('winner-modal').classList.add('hidden');
+            updateUI();
+            renderBoard();
+        }
+
+        function initBoard() {
+            let newBoard = Array(8).fill(null).map(() => Array(8).fill(null));
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if ((r + c) % 2 === 1) {
+                        if (r < 3) {
+                            newBoard[r][c] = { player: 2, isKing: false };
+                        } else if (r > 4) {
+                            newBoard[r][c] = { player: 1, isKing: false };
+                        }
+                    }
+                }
+            }
+            return newBoard;
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+
+            const allCurrentMoves = getAllValidMoves(board, currentPlayer);
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const square = document.createElement('div');
+                    square.className = `square ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+
+                    if (selectedSquare && selectedSquare.r === r && selectedSquare.c === c) {
+                        square.classList.add('selected');
+                    }
+
+                    if (activeValidMoves.some(m => m.to.r === r && m.to.c === c)) {
+                        square.classList.add('valid-move');
+                    }
+
+                    const piece = board[r][c];
+                    if (piece) {
+                        const pieceEl = document.createElement('div');
+                        pieceEl.className = `piece player${piece.player} ${piece.isKing ? 'king' : ''}`;
+                        square.appendChild(pieceEl);
+                    }
+
+                    square.addEventListener('click', () => handleSquareClick(r, c, allCurrentMoves));
+                    boardEl.appendChild(square);
+                }
+            }
+        }
+
+        function handleSquareClick(r, c, allCurrentMoves) {
+            if (isGameOver) return;
+            if (gameMode === 'cpu' && currentPlayer === 2) return;
+
+            const targetMove = activeValidMoves.find(m => m.to.r === r && m.to.c === c);
+
+            if (targetMove) {
+                executeMove(targetMove);
+                return;
+            }
+
+            const clickedPiece = board[r][c];
+            if (clickedPiece && clickedPiece.player === currentPlayer) {
+                selectedSquare = { r, c };
+                activeValidMoves = allCurrentMoves.filter(m => m.from.r === r && m.from.c === c);
+                renderBoard();
+            } else {
+                selectedSquare = null;
+                activeValidMoves = [];
+                renderBoard();
+            }
+        }
+
+        function executeMove(move) {
+            board = move.finalBoard;
+            selectedSquare = null;
+            activeValidMoves = [];
+
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            updateUI();
+            renderBoard();
+
+            if (!checkGameEnd()) {
+                if (gameMode === 'cpu' && currentPlayer === 2) {
+                    setTimeout(makeCPUMove, 400);
+                }
+            }
+        }
+
+        function makeCPUMove() {
+            const validMoves = getAllValidMoves(board, 2);
+            if (validMoves.length === 0) {
+                checkGameEnd();
+                return;
+            }
+
+            let bestMove = getBestCPUMove(validMoves);
+            executeMove(bestMove);
+        }
+
+        function getBestCPUMove(validMoves) {
+            let bestScore = -Infinity;
+            let bestMove = validMoves[0];
+
+            for (let move of validMoves) {
+                let score = minimax(move.finalBoard, 3, -Infinity, Infinity, false);
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            }
+            return bestMove;
+        }
+
+        function minimax(boardState, depth, alpha, beta, isMaximizing) {
+            if (depth === 0 || isTerminalState(boardState)) {
+                return evaluateBoard(boardState);
+            }
+
+            if (isMaximizing) {
+                let maxEval = -Infinity;
+                const moves = getAllValidMoves(boardState, 2);
+                if (moves.length === 0) return -10000;
+                for (let move of moves) {
+                    let evalVal = minimax(move.finalBoard, depth - 1, alpha, beta, false);
+                    maxEval = Math.max(maxEval, evalVal);
+                    alpha = Math.max(alpha, evalVal);
+                    if (beta <= alpha) break;
+                }
+                return maxEval;
+            } else {
+                let minEval = Infinity;
+                const moves = getAllValidMoves(boardState, 1);
+                if (moves.length === 0) return 10000;
+                for (let move of moves) {
+                    let evalVal = minimax(move.finalBoard, depth - 1, alpha, beta, true);
+                    minEval = Math.min(minEval, evalVal);
+                    beta = Math.min(beta, evalVal);
+                    if (beta <= alpha) break;
+                }
+                return minEval;
+            }
+        }
+
+        function evaluateBoard(boardState) {
+            let score = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = boardState[r][c];
+                    if (piece) {
+                        let val = piece.isKing ? 35 : 10;
+                        if (!piece.isKing) {
+                            val += (piece.player === 2) ? r : (7 - r);
+                        }
+                        if (r >= 2 && r <= 5 && c >= 2 && c <= 5) val += 2;
+                        
+                        score += (piece.player === 2) ? val : -val;
+                    }
+                }
+            }
+            return score;
+        }
+
+        function isTerminalState(boardState) {
+            return countPieces(boardState, 1) === 0 || countPieces(boardState, 2) === 0;
+        }
+
+        function countPieces(boardState, player) {
+            let count = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (boardState[r][c] && boardState[r][c].player === player) count++;
+                }
+            }
+            return count;
+        }
+
+        function checkGameEnd() {
+            const p1Pieces = countPieces(board, 1);
+            const p2Pieces = countPieces(board, 2);
+            const currentMoves = getAllValidMoves(board, currentPlayer);
+
+            let winner = null;
+
+            if (p1Pieces === 0) winner = gameMode === 'cpu' ? '🤖 CPU Venceu!' : '🔴 Vermelhas Venceram!';
+            else if (p2Pieces === 0) winner = '⚪ Brancas Venceram!';
+            else if (currentMoves.length === 0) {
+                winner = currentPlayer === 1 ? (gameMode === 'cpu' ? '🤖 CPU Venceu!' : '🔴 Vermelhas Venceram!') : '⚪ Brancas Venceram!';
+            }
+
+            if (winner) {
+                isGameOver = true;
+                document.getElementById('winner-title').innerText = winner;
+                document.getElementById('winner-message').innerText = 'Fim da Partida!';
+                document.getElementById('winner-modal').classList.remove('hidden');
+                return true;
+            }
+            return false;
+        }
+
+        function updateUI() {
+            const p1Count = countPieces(board, 1);
+            const p2Count = countPieces(board, 2);
+
+            document.getElementById('p1-score').innerText = `Peças: ${p1Count}`;
+            document.getElementById('p2-score').innerText = `Peças: ${p2Count}`;
+
+            const statusText = document.getElementById('status-text');
+            const p1Card = document.getElementById('p1-card');
+            const p2Card = document.getElementById('p2-card');
+
+            if (currentPlayer === 1) {
+                statusText.innerText = 'Vez das Brancas';
+                p1Card.classList.add('active');
+                p2Card.classList.remove('active');
+            } else {
+                statusText.innerText = gameMode === 'cpu' ? 'Vez da CPU...' : 'Vez das Vermelhas';
+                p2Card.classList.add('active');
+                p1Card.classList.remove('active');
+            }
+        }
+
+        function getAllValidMoves(boardState, player) {
+            let allMoves = [];
+            let maxCaptures = 0;
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = boardState[r][c];
+                    if (piece && piece.player === player) {
+                        const jumps = findJumpsRecursive(boardState, r, c, player, piece.isKing);
+                        for (let j of jumps) {
+                            if (j.capturedCount > maxCaptures) {
+                                maxCaptures = j.capturedCount;
+                            }
+                            allMoves.push({
+                                from: { r, c },
+                                to: j.to,
+                                capturedCount: j.capturedCount,
+                                isCapture: true,
+                                finalBoard: j.finalBoard
+                            });
+                        }
+                    }
+                }
+            }
+
+            if (maxCaptures > 0) {
+                return allMoves.filter(m => m.capturedCount === maxCaptures);
+            }
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = boardState[r][c];
+                    if (piece && piece.player === player) {
+                        const simpleMoves = getPieceSimpleMoves(boardState, r, c);
+                        allMoves.push(...simpleMoves);
+                    }
+                }
+            }
+
+            return allMoves;
+        }
+
+        function getPieceSimpleMoves(boardState, r, c) {
+            const piece = boardState[r][c];
+            if (!piece) return [];
+            const moves = [];
+            const player = piece.player;
+
+            if (!piece.isKing) {
+                const dirs = player === 1 ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
+                for (let [dr, dc] of dirs) {
+                    let nr = r + dr, nc = c + dc;
+                    if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && boardState[nr][nc] === null) {
+                        let tempBoard = cloneBoard(boardState);
+                        tempBoard[nr][nc] = tempBoard[r][c];
+                        tempBoard[r][c] = null;
+                        if ((player === 1 && nr === 0) || (player === 2 && nr === 7)) {
+                            tempBoard[nr][nc].isKing = true;
+                        }
+                        moves.push({
+                            from: { r, c },
+                            to: { r: nr, c: nc },
+                            capturedCount: 0,
+                            isCapture: false,
+                            finalBoard: tempBoard
+                        });
+                    }
+                }
+            } else {
+                const dirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+                for (let [dr, dc] of dirs) {
+                    let step = 1;
+                    while (true) {
+                        let nr = r + dr * step, nc = c + dc * step;
+                        if (nr < 0 || nr >= 8 || nc < 0 || nc >= 8) break;
+                        if (boardState[nr][nc] !== null) break;
+
+                        let tempBoard = cloneBoard(boardState);
+                        tempBoard[nr][nc] = tempBoard[r][c];
+                        tempBoard[r][c] = null;
+
+                        moves.push({
+                            from: { r, c },
+                            to: { r: nr, c: nc },
+                            capturedCount: 0,
+                            isCapture: false,
+                            finalBoard: tempBoard
+                        });
+                        step++;
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function findJumpsRecursive(boardState, r, c, player, isKing) {
+            let results = [];
+            const opponent = player === 1 ? 2 : 1;
+            const dirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+
+            if (!isKing) {
+                for (let [dr, dc] of dirs) {
+                    let mr = r + dr, mc = c + dc;
+                    let lr = r + 2 * dr, lc = c + 2 * dc;
+
+                    if (lr >= 0 && lr < 8 && lc >= 0 && lc < 8) {
+                        if (boardState[mr][mc] && boardState[mr][mc].player === opponent && boardState[lr][lc] === null) {
+                            let newBoard = cloneBoard(boardState);
+                            newBoard[lr][lc] = newBoard[r][c];
+                            newBoard[r][c] = null;
+                            newBoard[mr][mc] = null;
+
+                            if ((player === 1 && lr === 0) || (player === 2 && lr === 7)) {
+                                newBoard[lr][lc].isKing = true;
+                            }
+
+                            let nextJumps = findJumpsRecursive(newBoard, lr, lc, player, newBoard[lr][lc].isKing);
+
+                            if (nextJumps.length > 0) {
+                                for (let nj of nextJumps) {
+                                    results.push({
+                                        to: nj.to,
+                                        capturedCount: 1 + nj.capturedCount,
+                                        finalBoard: nj.finalBoard
+                                    });
+                                }
+                            } else {
+                                results.push({
+                                    to: { r: lr, c: lc },
+                                    capturedCount: 1,
+                                    finalBoard: newBoard
+                                });
+                            }
+                        }
+                    }
+                }
+            } else {
+                for (let [dr, dc] of dirs) {
+                    let step = 1;
+                    let oppPos = null;
+
+                    while (true) {
+                        let currR = r + dr * step;
+                        let currC = c + dc * step;
+
+                        if (currR < 0 || currR >= 8 || currC < 0 || currC >= 8) break;
+
+                        let cell = boardState[currR][currC];
+                        if (cell !== null) {
+                            if (cell.player === opponent && oppPos === null) {
+                                oppPos = { r: currR, c: currC };
+                            } else {
+                                break;
+                            }
+                        } else {
+                            if (oppPos !== null) {
+                                let landingR = currR;
+                                let landingC = currC;
+
+                                let newBoard = cloneBoard(boardState);
+                                newBoard[landingR][landingC] = newBoard[r][c];
+                                newBoard[r][c] = null;
+                                newBoard[oppPos.r][oppPos.c] = null;
+
+                                let nextJumps = findJumpsRecursive(newBoard, landingR, landingC, player, true);
+
+                                if (nextJumps.length > 0) {
+                                    for (let nj of nextJumps) {
+                                        results.push({
+                                            to: nj.to,
+                                            capturedCount: 1 + nj.capturedCount,
+                                            finalBoard: nj.finalBoard
+                                        });
+                                    }
+                                } else {
+                                    results.push({
+                                        to: { r: landingR, c: landingC },
+                                        capturedCount: 1,
+                                        finalBoard: newBoard
+                                    });
+                                }
+                            }
+                        }
+                        step++;
+                    }
+                }
+            }
+
+            return results;
+        }
+
+        function cloneBoard(boardState) {
+            return boardState.map(row => row.map(cell => cell ? { ...cell } : null));
+        }
+    </script>
 </body>
 </html>
