@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dama & Xadrez - Modo Livre</title>
+    <title>Dama & Xadrez - Regras Corrigidas</title>
     <style>
         * {
             box-sizing: border-box;
@@ -152,7 +152,7 @@
             width: 72%;
             height: 72%;
             background-color: transparent;
-            border: 5px solid rgba(235, 60, 60, 0.8);
+            border: 5px solid rgba(235, 60, 60, 0.85);
             border-radius: 50%;
             position: absolute;
             pointer-events: none;
@@ -414,6 +414,7 @@
         let currentPlayer = 1;     // 1: Brancas, 2: Pretas/CPU
         let selectedSquare = null;
         let activeValidMoves = [];
+        let comboSquare = null;    // Posição da peça em captura múltipla
         let isGameOver = false;
 
         function showSelectionModal() {
@@ -448,6 +449,7 @@
             currentPlayer = 1;
             selectedSquare = null;
             activeValidMoves = [];
+            comboSquare = null;
             isGameOver = false;
             document.getElementById('winner-modal').classList.add('hidden');
             updateUI();
@@ -553,6 +555,15 @@
             if (isGameOver) return;
             if (gameMode === 'cpu' && currentPlayer === 2) return;
 
+            // Se estiver em sequência de captura (combo), trava a seleção na peça atual
+            if (comboSquare) {
+                const targetMove = activeValidMoves.find(m => m.to.r === r && m.to.c === c);
+                if (targetMove) {
+                    executeMove(targetMove);
+                }
+                return;
+            }
+
             const targetMove = activeValidMoves.find(m => m.to.r === r && m.to.c === c);
 
             if (targetMove) {
@@ -574,6 +585,35 @@
 
         function executeMove(move) {
             board = move.finalBoard;
+
+            // Lógica de Captura em Sequência (Combo)
+            if (move.isCapture && selectedGame === 'dama') {
+                const landedPiece = board[move.to.r][move.to.c];
+                const promotedThisTurn = landedPiece && landedPiece.isKing && ((landedPiece.player === 1 && move.to.r === 0) || (landedPiece.player === 2 && move.to.r === 7));
+
+                // Se a peça não acabou de virar Dama neste turno, verifica se há mais capturas
+                const nextCaptures = getPieceCaptures(board, move.to.r, move.to.c);
+                if (nextCaptures.length > 0 && !promotedThisTurn) {
+                    comboSquare = { r: move.to.r, c: move.to.c };
+                    selectedSquare = comboSquare;
+                    activeValidMoves = nextCaptures;
+                    updateUI();
+                    renderBoard();
+
+                    // Sequência da CPU automática
+                    if (gameMode === 'cpu' && currentPlayer === 2) {
+                        setTimeout(() => {
+                            if (activeValidMoves.length > 0) {
+                                executeMove(activeValidMoves[0]);
+                            }
+                        }, 400);
+                    }
+                    return; // Permanece no mesmo turno
+                }
+            }
+
+            // Fim da jogada/combo
+            comboSquare = null;
             selectedSquare = null;
             activeValidMoves = [];
 
@@ -730,7 +770,9 @@
             const p1Card = document.getElementById('p1-card');
             const p2Card = document.getElementById('p2-card');
 
-            if (currentPlayer === 1) {
+            if (comboSquare) {
+                statusText.innerText = currentPlayer === 1 ? '🔥 Continue comendo!' : '🔥 CPU em sequência...';
+            } else if (currentPlayer === 1) {
                 statusText.innerText = selectedGame === 'xadrez' && isKingInCheck(board, 1) ? '⚠️ Xeque! Vez das Brancas' : 'Vez das Brancas';
                 p1Card.classList.add('active');
                 p2Card.classList.remove('active');
@@ -744,126 +786,170 @@
         }
 
         /* -------------------------------------------------------------
-           LÓGICA DA DAMA (LIBERDADE TOTAL DE JOGADA)
+           LÓGICA DA DAMA (REGRAS CORRIGIDAS)
         ------------------------------------------------------------- */
         function getAllValidMoves(boardState, player) {
             return selectedGame === 'dama' ? getDamaMoves(boardState, player) : getChessMoves(boardState, player);
         }
 
         function getDamaMoves(boardState, player) {
-            let moves = [];
-            const opponent = player === 1 ? 2 : 1;
-            const allDirs = [[-1,-1], [-1,1], [1,-1], [1,1]];
+            if (comboSquare) {
+                return getPieceCaptures(boardState, comboSquare.r, comboSquare.c);
+            }
 
+            let allMoves = [];
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const piece = boardState[r][c];
                     if (piece && piece.player === player) {
+                        let simple = getPieceSimpleMoves(boardState, r, c);
+                        let captures = getPieceCaptures(boardState, r, c);
+                        allMoves.push(...simple, ...captures);
+                    }
+                }
+            }
+            return allMoves;
+        }
 
-                        if (!piece.isKing) {
-                            // 1. Movimentos Simples da Pedra (1 casa na diagonal - Frente e Trás)
-                            for (let [dr, dc] of allDirs) {
-                                let nr = r + dr, nc = c + dc;
-                                if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && boardState[nr][nc] === null) {
-                                    let newBoard = cloneBoard(boardState);
-                                    newBoard[nr][nc] = newBoard[r][c];
-                                    newBoard[r][c] = null;
+        function getPieceSimpleMoves(boardState, r, c) {
+            const piece = boardState[r][c];
+            if (!piece) return [];
 
-                                    if ((player === 1 && nr === 0) || (player === 2 && nr === 7)) {
-                                        newBoard[nr][nc].isKing = true;
-                                    }
+            let moves = [];
+            const player = piece.player;
 
-                                    moves.push({
-                                        from: { r, c },
-                                        to: { r: nr, c: nc },
-                                        isCapture: false,
-                                        finalBoard: newBoard
-                                    });
-                                }
-                            }
+            if (!piece.isKing) {
+                // MOVIMENTO SIMPLES DA PEDRA: APENAS PARA A FRENTE!
+                // Player 1 (Brancas): move para cima (dr = -1)
+                // Player 2 (Pretas): move para baixo (dr = 1)
+                const forwardDirs = player === 1 ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
 
-                            // 2. Capturas Opcionais da Pedra (2 casas saltando inimigo - Frente e Trás)
-                            for (let [dr, dc] of allDirs) {
-                                let mr = r + dr, mc = c + dc;
-                                let lr = r + 2 * dr, lc = c + 2 * dc;
+                for (let [dr, dc] of forwardDirs) {
+                    let nr = r + dr, nc = c + dc;
+                    if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && boardState[nr][nc] === null) {
+                        let newBoard = cloneBoard(boardState);
+                        newBoard[nr][nc] = { ...newBoard[r][c] };
+                        newBoard[r][c] = null;
 
-                                if (lr >= 0 && lr < 8 && lc >= 0 && lc < 8) {
-                                    if (boardState[mr][mc] && boardState[mr][mc].player === opponent && boardState[lr][lc] === null) {
-                                        let newBoard = cloneBoard(boardState);
-                                        newBoard[lr][lc] = newBoard[r][c];
-                                        newBoard[r][c] = null;
-                                        newBoard[mr][mc] = null; // Elimina a peça comida
-
-                                        if ((player === 1 && lr === 0) || (player === 2 && lr === 7)) {
-                                            newBoard[lr][lc].isKing = true;
-                                        }
-
-                                        moves.push({
-                                            from: { r, c },
-                                            to: { r: lr, c: lc },
-                                            isCapture: true,
-                                            finalBoard: newBoard
-                                        });
-                                    }
-                                }
-                            }
-                        } else {
-                            // 3. DAMA (Rei) - Movimentação Voadora Opcional
-                            for (let [dr, dc] of allDirs) {
-                                let step = 1;
-                                let foundOpponent = null;
-
-                                while (true) {
-                                    let nr = r + dr * step, nc = c + dc * step;
-                                    if (nr < 0 || nr >= 8 || nc < 0 || nc >= 8) break;
-
-                                    let cell = boardState[nr][nc];
-
-                                    if (cell === null) {
-                                        if (foundOpponent === null) {
-                                            // Movimento Simples da Dama
-                                            let newBoard = cloneBoard(boardState);
-                                            newBoard[nr][nc] = newBoard[r][c];
-                                            newBoard[r][c] = null;
-
-                                            moves.push({
-                                                from: { r, c },
-                                                to: { r: nr, c: nc },
-                                                isCapture: false,
-                                                finalBoard: newBoard
-                                            });
-                                        } else {
-                                            // Captura da Dama
-                                            let newBoard = cloneBoard(boardState);
-                                            newBoard[nr][nc] = newBoard[r][c];
-                                            newBoard[r][c] = null;
-                                            newBoard[foundOpponent.r][foundOpponent.c] = null;
-
-                                            moves.push({
-                                                from: { r, c },
-                                                to: { r: nr, c: nc },
-                                                isCapture: true,
-                                                finalBoard: newBoard
-                                            });
-                                        }
-                                    } else if (cell.player === opponent) {
-                                        if (foundOpponent === null) {
-                                            foundOpponent = { r: nr, c: nc };
-                                        } else {
-                                            break; // Bloqueado por 2 inimigos
-                                        }
-                                    } else {
-                                        break; // Bloqueado por peça própria
-                                    }
-                                    step++;
-                                }
-                            }
+                        if ((player === 1 && nr === 0) || (player === 2 && nr === 7)) {
+                            newBoard[nr][nc].isKing = true;
                         }
+
+                        moves.push({
+                            from: { r, c },
+                            to: { r: nr, c: nc },
+                            isCapture: false,
+                            finalBoard: newBoard
+                        });
+                    }
+                }
+            } else {
+                // DAMA (REI): move em todas as diagonais livremente por qualquer distância
+                const allDirs = [[-1,-1], [-1,1], [1,-1], [1,1]];
+                for (let [dr, dc] of allDirs) {
+                    let step = 1;
+                    while (true) {
+                        let nr = r + dr * step, nc = c + dc * step;
+                        if (nr < 0 || nr >= 8 || nc < 0 || nc >= 8) break;
+
+                        if (boardState[nr][nc] === null) {
+                            let newBoard = cloneBoard(boardState);
+                            newBoard[nr][nc] = { ...newBoard[r][c] };
+                            newBoard[r][c] = null;
+
+                            moves.push({
+                                from: { r, c },
+                                to: { r: nr, c: nc },
+                                isCapture: false,
+                                finalBoard: newBoard
+                            });
+                        } else {
+                            break;
+                        }
+                        step++;
                     }
                 }
             }
 
             return moves;
+        }
+
+        function getPieceCaptures(boardState, r, c) {
+            const piece = boardState[r][c];
+            if (!piece) return [];
+
+            let captures = [];
+            const player = piece.player;
+            const opponent = player === 1 ? 2 : 1;
+            const allDirs = [[-1,-1], [-1,1], [1,-1], [1,1]];
+
+            if (!piece.isKing) {
+                // CAPTURA DA PEDRA (Salto de 2 casas)
+                for (let [dr, dc] of allDirs) {
+                    let mr = r + dr, mc = c + dc;
+                    let lr = r + 2 * dr, lc = c + 2 * dc;
+
+                    if (lr >= 0 && lr < 8 && lc >= 0 && lc < 8) {
+                        if (boardState[mr][mc] && boardState[mr][mc].player === opponent && boardState[lr][lc] === null) {
+                            let newBoard = cloneBoard(boardState);
+                            newBoard[lr][lc] = { ...newBoard[r][c] };
+                            newBoard[r][c] = null;
+                            newBoard[mr][mc] = null; // Elimina a peça capturada
+
+                            if ((player === 1 && lr === 0) || (player === 2 && lr === 7)) {
+                                newBoard[lr][lc].isKing = true;
+                            }
+
+                            captures.push({
+                                from: { r, c },
+                                to: { r: lr, c: lc },
+                                isCapture: true,
+                                finalBoard: newBoard
+                            });
+                        }
+                    }
+                }
+            } else {
+                // CAPTURA DA DAMA
+                for (let [dr, dc] of allDirs) {
+                    let step = 1;
+                    let foundOpponent = null;
+
+                    while (true) {
+                        let nr = r + dr * step, nc = c + dc * step;
+                        if (nr < 0 || nr >= 8 || nc < 0 || nc >= 8) break;
+
+                        let cell = boardState[nr][nc];
+
+                        if (cell === null) {
+                            if (foundOpponent !== null) {
+                                let newBoard = cloneBoard(boardState);
+                                newBoard[nr][nc] = { ...newBoard[r][c] };
+                                newBoard[r][c] = null;
+                                newBoard[foundOpponent.r][foundOpponent.c] = null;
+
+                                captures.push({
+                                    from: { r, c },
+                                    to: { r: nr, c: nc },
+                                    isCapture: true,
+                                    finalBoard: newBoard
+                                });
+                            }
+                        } else if (cell.player === opponent) {
+                            if (foundOpponent === null) {
+                                foundOpponent = { r: nr, c: nc };
+                            } else {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                        step++;
+                    }
+                }
+            }
+
+            return captures;
         }
 
         /* -------------------------------------------------------------
