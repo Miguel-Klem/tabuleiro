@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo da Dama</title>
+    <title>Dama & Xadrez</title>
     <style>
         * {
             box-sizing: border-box;
@@ -28,7 +28,7 @@
             align-items: center;
             gap: 15px;
             width: 100%;
-            max-width: 500px;
+            max-width: 520px;
         }
 
         .header {
@@ -37,7 +37,7 @@
         }
 
         .header h1 {
-            font-size: 2rem;
+            font-size: 2.2rem;
             margin-bottom: 12px;
             color: #38ef7d;
             text-shadow: 0 2px 5px rgba(0,0,0,0.5);
@@ -107,8 +107,8 @@
             display: grid;
             grid-template-columns: repeat(8, 1fr);
             grid-template-rows: repeat(8, 1fr);
-            width: min(85vw, 420px);
-            height: min(85vw, 420px);
+            width: min(85vw, 440px);
+            height: min(85vw, 440px);
             border: 3px solid #3d2815;
             border-radius: 4px;
             overflow: hidden;
@@ -137,8 +137,8 @@
 
         .square.valid-move::after {
             content: '';
-            width: 32%;
-            height: 32%;
+            width: 30%;
+            height: 30%;
             background-color: rgba(46, 204, 113, 0.9);
             border-radius: 50%;
             box-shadow: 0 0 10px rgba(46, 204, 113, 1);
@@ -146,7 +146,8 @@
             pointer-events: none;
         }
 
-        .piece {
+        /* Peças de Dama */
+        .piece-dama {
             width: 80%;
             height: 80%;
             border-radius: 50%;
@@ -157,23 +158,38 @@
             box-shadow: inset 0 -3px 5px rgba(0,0,0,0.5), 0 3px 6px rgba(0,0,0,0.4);
         }
 
-        .piece:hover {
-            transform: scale(1.08);
-        }
-
-        .piece.player1 {
+        .piece-dama.player1 {
             background: radial-gradient(circle at 30% 30%, #ffffff, #cccccc);
             border: 2px solid #999999;
         }
 
-        .piece.player2 {
+        .piece-dama.player2 {
             background: radial-gradient(circle at 30% 30%, #e74c3c, #a93226);
             border: 2px solid #641e16;
         }
 
-        .piece.king::before {
+        .piece-dama.king::before {
             content: '👑';
             font-size: 1.1rem;
+        }
+
+        /* Peças de Xadrez */
+        .piece-chess {
+            font-size: 2.3rem;
+            line-height: 1;
+            user-select: none;
+            transition: transform 0.15s ease;
+            filter: drop-shadow(0 3px 3px rgba(0,0,0,0.5));
+        }
+
+        .piece-chess.player1 {
+            color: #ffffff;
+            text-shadow: 0 0 2px #000;
+        }
+
+        .piece-chess.player2 {
+            color: #e74c3c;
+            text-shadow: 0 0 2px #000;
         }
 
         .controls {
@@ -184,8 +200,8 @@
 
         .btn {
             flex: 1;
-            padding: 10px 15px;
-            font-size: 0.9rem;
+            padding: 12px 15px;
+            font-size: 0.95rem;
             font-weight: 600;
             border: none;
             border-radius: 8px;
@@ -223,6 +239,7 @@
             color: white;
         }
 
+        /* Modais */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -245,7 +262,7 @@
             padding: 28px 24px;
             border-radius: 16px;
             text-align: center;
-            max-width: 380px;
+            max-width: 400px;
             width: 90%;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             border: 1px solid #2c2c3e;
@@ -266,14 +283,14 @@
         .modal-buttons {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
         <header class="header">
-            <h1>Jogo da Dama</h1>
+            <h1 id="game-title">Jogo da Dama</h1>
             <div class="scoreboard">
                 <div class="player-card p1-card active" id="p1-card">
                     <span class="player-name">⚪ Brancas</span>
@@ -293,18 +310,32 @@
 
         <div class="controls">
             <button class="btn btn-outline" onclick="resetGame()">🔄 Reiniciar</button>
-            <button class="btn btn-outline" onclick="showModeModal()">⚙️ Mudar Modo</button>
+            <button class="btn btn-outline" onclick="showSelectionModal()">⚙️ Escolher Jogo</button>
         </div>
     </div>
 
-    <!-- Modal Seleção de Modo -->
-    <div id="mode-modal" class="modal-overlay">
+    <!-- Modal Seleção de Jogo e Modo -->
+    <div id="selection-modal" class="modal-overlay">
         <div class="modal-card">
-            <h2>Jogo da Dama</h2>
-            <p>Escolha o modo para iniciar:</p>
-            <div class="modal-buttons">
-                <button class="btn btn-primary" onclick="startGame('cpu')">🤖 Jogar contra CPU</button>
-                <button class="btn btn-secondary" onclick="startGame('local')">👥 2 Jogadores (Local)</button>
+            <!-- Passo 1: Escolher Jogo -->
+            <div id="step-game">
+                <h2>Qual jogo deseja jogar?</h2>
+                <p>Escolha a modalidade de hoje:</p>
+                <div class="modal-buttons">
+                    <button class="btn btn-primary" onclick="chooseGame('dama')">🔴 Jogo da Dama</button>
+                    <button class="btn btn-secondary" onclick="chooseGame('xadrez')">♟️ Xadrez</button>
+                </div>
+            </div>
+
+            <!-- Passo 2: Escolher Modo -->
+            <div id="step-mode" class="hidden">
+                <h2 id="mode-title">Escolha o Modo</h2>
+                <p>Como você deseja jogar?</p>
+                <div class="modal-buttons">
+                    <button class="btn btn-primary" onclick="startGame('cpu')">🤖 Jogar contra CPU</button>
+                    <button class="btn btn-secondary" onclick="startGame('local')">👥 2 Jogadores (Local)</button>
+                    <button class="btn btn-outline" onclick="backToGameSelection()">⬅️ Voltar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -314,36 +345,54 @@
         <div class="modal-card">
             <h2 id="winner-title">Vitória!</h2>
             <p id="winner-message">Fim de jogo!</p>
-            <button class="btn btn-primary" onclick="resetGameFromModal()">Jogar Novamente</button>
+            <button class="btn btn-primary" onclick="showSelectionModal()">Jogar Novamente</button>
         </div>
     </div>
 
     <script>
+        // SÍMBOLOS DAS PEÇAS DE XADREZ
+        const CHESS_SYMBOLS = {
+            1: { 'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙' },
+            2: { 'K': '♚', 'Q': '♛', 'R': '♜', 'B': '♝', 'N': '♞', 'P': '♟' }
+        };
+
+        let selectedGame = 'dama'; // 'dama' ou 'xadrez'
+        let gameMode = 'cpu';      // 'cpu' ou 'local'
         let board = [];
-        let currentPlayer = 1; // 1: Brancas, 2: Vermelhas / CPU
-        let gameMode = 'cpu';
+        let currentPlayer = 1;     // 1: Brancas, 2: Vermelhas / Pretas
         let selectedSquare = null;
         let activeValidMoves = [];
         let isGameOver = false;
 
-        function showModeModal() {
-            document.getElementById('mode-modal').classList.remove('hidden');
+        function showSelectionModal() {
+            document.getElementById('step-game').classList.remove('hidden');
+            document.getElementById('step-mode').classList.add('hidden');
+            document.getElementById('selection-modal').classList.remove('hidden');
+            document.getElementById('winner-modal').classList.add('hidden');
+        }
+
+        function chooseGame(game) {
+            selectedGame = game;
+            document.getElementById('step-game').classList.add('hidden');
+            document.getElementById('step-mode').classList.remove('hidden');
+            document.getElementById('mode-title').innerText = game === 'dama' ? 'Dama - Escolha o Modo' : 'Xadrez - Escolha o Modo';
+        }
+
+        function backToGameSelection() {
+            document.getElementById('step-game').classList.remove('hidden');
+            document.getElementById('step-mode').classList.add('hidden');
         }
 
         function startGame(mode) {
             gameMode = mode;
-            document.getElementById('mode-modal').classList.add('hidden');
-            document.getElementById('p2-name').innerText = mode === 'cpu' ? '🤖 CPU' : '🔴 Vermelhas';
+            document.getElementById('selection-modal').classList.add('hidden');
+            document.getElementById('game-title').innerText = selectedGame === 'dama' ? 'Jogo da Dama' : 'Xadrez';
+            document.getElementById('p2-name').innerText = mode === 'cpu' ? '🤖 CPU' : (selectedGame === 'dama' ? '🔴 Vermelhas' : '🔴 Pretas');
             resetGame();
         }
 
-        function resetGameFromModal() {
-            document.getElementById('winner-modal').classList.add('hidden');
-            showModeModal();
-        }
-
         function resetGame() {
-            board = initBoard();
+            board = selectedGame === 'dama' ? initDamaBoard() : initChessBoard();
             currentPlayer = 1;
             selectedSquare = null;
             activeValidMoves = [];
@@ -353,22 +402,40 @@
             renderBoard();
         }
 
-        function initBoard() {
+        /* -------------------------------------------------------------
+           INICIALIZAÇÃO DOS TABULEIROS
+        ------------------------------------------------------------- */
+        function initDamaBoard() {
             let newBoard = Array(8).fill(null).map(() => Array(8).fill(null));
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     if ((r + c) % 2 === 1) {
-                        if (r < 3) {
-                            newBoard[r][c] = { player: 2, isKing: false };
-                        } else if (r > 4) {
-                            newBoard[r][c] = { player: 1, isKing: false };
-                        }
+                        if (r < 3) newBoard[r][c] = { player: 2, isKing: false };
+                        else if (r > 4) newBoard[r][c] = { player: 1, isKing: false };
                     }
                 }
             }
             return newBoard;
         }
 
+        function initChessBoard() {
+            let newBoard = Array(8).fill(null).map(() => Array(8).fill(null));
+            const setupRow = (r, player, type) => { newBoard[r] = type.map(t => ({ player, type: t })); };
+            
+            const backRow = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
+            const pawnRow = Array(8).fill('P');
+
+            setupRow(0, 2, backRow);
+            setupRow(1, 2, pawnRow);
+            setupRow(6, 1, pawnRow);
+            setupRow(7, 1, backRow);
+
+            return newBoard;
+        }
+
+        /* -------------------------------------------------------------
+           RENDERIZAÇÃO DO TABULEIRO
+        ------------------------------------------------------------- */
         function renderBoard() {
             const boardEl = document.getElementById('board');
             boardEl.innerHTML = '';
@@ -391,7 +458,12 @@
                     const piece = board[r][c];
                     if (piece) {
                         const pieceEl = document.createElement('div');
-                        pieceEl.className = `piece player${piece.player} ${piece.isKing ? 'king' : ''}`;
+                        if (selectedGame === 'dama') {
+                            pieceEl.className = `piece-dama player${piece.player} ${piece.isKing ? 'king' : ''}`;
+                        } else {
+                            pieceEl.className = `piece-chess player${piece.player}`;
+                            pieceEl.innerText = CHESS_SYMBOLS[piece.player][piece.type];
+                        }
                         square.appendChild(pieceEl);
                     }
 
@@ -401,6 +473,9 @@
             }
         }
 
+        /* -------------------------------------------------------------
+           LOGICA DE INTERAÇÃO E MOVIMENTO
+        ------------------------------------------------------------- */
         function handleSquareClick(r, c, allCurrentMoves) {
             if (isGameOver) return;
             if (gameMode === 'cpu' && currentPlayer === 2) return;
@@ -435,7 +510,7 @@
 
             if (!checkGameEnd()) {
                 if (gameMode === 'cpu' && currentPlayer === 2) {
-                    setTimeout(makeCPUMove, 400);
+                    setTimeout(makeCPUMove, 450);
                 }
             }
         }
@@ -456,7 +531,7 @@
             let bestMove = validMoves[0];
 
             for (let move of validMoves) {
-                let score = minimax(move.finalBoard, 3, -Infinity, Infinity, false);
+                let score = minimax(move.finalBoard, 2, -Infinity, Infinity, false);
                 if (score > bestScore) {
                     bestScore = score;
                     bestMove = move;
@@ -501,12 +576,13 @@
                 for (let c = 0; c < 8; c++) {
                     const piece = boardState[r][c];
                     if (piece) {
-                        let val = piece.isKing ? 35 : 10;
-                        if (!piece.isKing) {
-                            val += (piece.player === 2) ? r : (7 - r);
+                        let val = 10;
+                        if (selectedGame === 'dama') {
+                            val = piece.isKing ? 35 : 10;
+                        } else {
+                            const chessVals = { 'P': 10, 'N': 30, 'B': 30, 'R': 50, 'Q': 90, 'K': 1000 };
+                            val = chessVals[piece.type] || 10;
                         }
-                        if (r >= 2 && r <= 5 && c >= 2 && c <= 5) val += 2;
-                        
                         score += (piece.player === 2) ? val : -val;
                     }
                 }
@@ -535,10 +611,26 @@
 
             let winner = null;
 
-            if (p1Pieces === 0) winner = gameMode === 'cpu' ? '🤖 CPU Venceu!' : '🔴 Vermelhas Venceram!';
-            else if (p2Pieces === 0) winner = '⚪ Brancas Venceram!';
-            else if (currentMoves.length === 0) {
-                winner = currentPlayer === 1 ? (gameMode === 'cpu' ? '🤖 CPU Venceu!' : '🔴 Vermelhas Venceram!') : '⚪ Brancas Venceram!';
+            if (selectedGame === 'xadrez') {
+                let p1King = false, p2King = false;
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        if (board[r][c] && board[r][c].type === 'K') {
+                            if (board[r][c].player === 1) p1King = true;
+                            if (board[r][c].player === 2) p2King = true;
+                        }
+                    }
+                }
+                if (!p1King) winner = gameMode === 'cpu' ? '🤖 CPU Venceu!' : '🔴 Pretas Venceram!';
+                else if (!p2King) winner = '⚪ Brancas Venceram!';
+            }
+
+            if (!winner) {
+                if (p1Pieces === 0) winner = gameMode === 'cpu' ? '🤖 CPU Venceu!' : '🔴 Venceu!';
+                else if (p2Pieces === 0) winner = '⚪ Brancas Venceram!';
+                else if (currentMoves.length === 0) {
+                    winner = currentPlayer === 1 ? (gameMode === 'cpu' ? '🤖 CPU Venceu!' : '🔴 Venceu!') : '⚪ Brancas Venceram!';
+                }
             }
 
             if (winner) {
@@ -567,13 +659,21 @@
                 p1Card.classList.add('active');
                 p2Card.classList.remove('active');
             } else {
-                statusText.innerText = gameMode === 'cpu' ? 'Vez da CPU...' : 'Vez das Vermelhas';
+                statusText.innerText = gameMode === 'cpu' ? 'Vez da CPU...' : (selectedGame === 'dama' ? 'Vez das Vermelhas' : 'Vez das Pretas');
                 p2Card.classList.add('active');
                 p1Card.classList.remove('active');
             }
         }
 
+        /* -------------------------------------------------------------
+           GERADOR DE MOVIMENTOS (ROUTE DAMA / XADREZ)
+        ------------------------------------------------------------- */
         function getAllValidMoves(boardState, player) {
+            return selectedGame === 'dama' ? getDamaMoves(boardState, player) : getChessMoves(boardState, player);
+        }
+
+        /* ------------------ LÓGICA DA DAMA ------------------ */
+        function getDamaMoves(boardState, player) {
             let allMoves = [];
             let maxCaptures = 0;
 
@@ -583,14 +683,11 @@
                     if (piece && piece.player === player) {
                         const jumps = findJumpsRecursive(boardState, r, c, player, piece.isKing);
                         for (let j of jumps) {
-                            if (j.capturedCount > maxCaptures) {
-                                maxCaptures = j.capturedCount;
-                            }
+                            if (j.capturedCount > maxCaptures) maxCaptures = j.capturedCount;
                             allMoves.push({
                                 from: { r, c },
                                 to: j.to,
                                 capturedCount: j.capturedCount,
-                                isCapture: true,
                                 finalBoard: j.finalBoard
                             });
                         }
@@ -606,72 +703,41 @@
                 for (let c = 0; c < 8; c++) {
                     const piece = boardState[r][c];
                     if (piece && piece.player === player) {
-                        const simpleMoves = getPieceSimpleMoves(boardState, r, c);
-                        allMoves.push(...simpleMoves);
-                    }
-                }
-            }
+                        const dirs = piece.isKing ? [[-1,-1],[-1,1],[1,-1],[1,1]] : (player === 1 ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]]);
+                        for (let [dr, dc] of dirs) {
+                            let step = 1;
+                            while (true) {
+                                let nr = r + dr * step, nc = c + dc * step;
+                                if (nr < 0 || nr >= 8 || nc < 0 || nc >= 8) break;
+                                if (boardState[nr][nc] !== null) break;
 
-            return allMoves;
-        }
+                                let tempBoard = cloneBoard(boardState);
+                                tempBoard[nr][nc] = tempBoard[r][c];
+                                tempBoard[r][c] = null;
+                                if (!piece.isKing && ((player === 1 && nr === 0) || (player === 2 && nr === 7))) {
+                                    tempBoard[nr][nc].isKing = true;
+                                }
 
-        function getPieceSimpleMoves(boardState, r, c) {
-            const piece = boardState[r][c];
-            if (!piece) return [];
-            const moves = [];
-            const player = piece.player;
+                                allMoves.push({
+                                    from: { r, c },
+                                    to: { r: nr, c: nc },
+                                    finalBoard: tempBoard
+                                });
 
-            if (!piece.isKing) {
-                const dirs = player === 1 ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
-                for (let [dr, dc] of dirs) {
-                    let nr = r + dr, nc = c + dc;
-                    if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8 && boardState[nr][nc] === null) {
-                        let tempBoard = cloneBoard(boardState);
-                        tempBoard[nr][nc] = tempBoard[r][c];
-                        tempBoard[r][c] = null;
-                        if ((player === 1 && nr === 0) || (player === 2 && nr === 7)) {
-                            tempBoard[nr][nc].isKing = true;
+                                if (!piece.isKing) break;
+                                step++;
+                            }
                         }
-                        moves.push({
-                            from: { r, c },
-                            to: { r: nr, c: nc },
-                            capturedCount: 0,
-                            isCapture: false,
-                            finalBoard: tempBoard
-                        });
-                    }
-                }
-            } else {
-                const dirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
-                for (let [dr, dc] of dirs) {
-                    let step = 1;
-                    while (true) {
-                        let nr = r + dr * step, nc = c + dc * step;
-                        if (nr < 0 || nr >= 8 || nc < 0 || nc >= 8) break;
-                        if (boardState[nr][nc] !== null) break;
-
-                        let tempBoard = cloneBoard(boardState);
-                        tempBoard[nr][nc] = tempBoard[r][c];
-                        tempBoard[r][c] = null;
-
-                        moves.push({
-                            from: { r, c },
-                            to: { r: nr, c: nc },
-                            capturedCount: 0,
-                            isCapture: false,
-                            finalBoard: tempBoard
-                        });
-                        step++;
                     }
                 }
             }
-            return moves;
+            return allMoves;
         }
 
         function findJumpsRecursive(boardState, r, c, player, isKing) {
             let results = [];
             const opponent = player === 1 ? 2 : 1;
-            const dirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+            const dirs = [[-1,-1],[-1,1],[1,-1],[1,1]];
 
             if (!isKing) {
                 for (let [dr, dc] of dirs) {
@@ -693,18 +759,10 @@
 
                             if (nextJumps.length > 0) {
                                 for (let nj of nextJumps) {
-                                    results.push({
-                                        to: nj.to,
-                                        capturedCount: 1 + nj.capturedCount,
-                                        finalBoard: nj.finalBoard
-                                    });
+                                    results.push({ to: nj.to, capturedCount: 1 + nj.capturedCount, finalBoard: nj.finalBoard });
                                 }
                             } else {
-                                results.push({
-                                    to: { r: lr, c: lc },
-                                    capturedCount: 1,
-                                    finalBoard: newBoard
-                                });
+                                results.push({ to: { r: lr, c: lc }, capturedCount: 1, finalBoard: newBoard });
                             }
                         }
                     }
@@ -715,23 +773,16 @@
                     let oppPos = null;
 
                     while (true) {
-                        let currR = r + dr * step;
-                        let currC = c + dc * step;
-
+                        let currR = r + dr * step, currC = c + dc * step;
                         if (currR < 0 || currR >= 8 || currC < 0 || currC >= 8) break;
 
                         let cell = boardState[currR][currC];
                         if (cell !== null) {
-                            if (cell.player === opponent && oppPos === null) {
-                                oppPos = { r: currR, c: currC };
-                            } else {
-                                break;
-                            }
+                            if (cell.player === opponent && oppPos === null) oppPos = { r: currR, c: currC };
+                            else break;
                         } else {
                             if (oppPos !== null) {
-                                let landingR = currR;
-                                let landingC = currC;
-
+                                let landingR = currR, landingC = currC;
                                 let newBoard = cloneBoard(boardState);
                                 newBoard[landingR][landingC] = newBoard[r][c];
                                 newBoard[r][c] = null;
@@ -741,18 +792,10 @@
 
                                 if (nextJumps.length > 0) {
                                     for (let nj of nextJumps) {
-                                        results.push({
-                                            to: nj.to,
-                                            capturedCount: 1 + nj.capturedCount,
-                                            finalBoard: nj.finalBoard
-                                        });
+                                        results.push({ to: nj.to, capturedCount: 1 + nj.capturedCount, finalBoard: nj.finalBoard });
                                     }
                                 } else {
-                                    results.push({
-                                        to: { r: landingR, c: landingC },
-                                        capturedCount: 1,
-                                        finalBoard: newBoard
-                                    });
+                                    results.push({ to: { r: landingR, c: landingC }, capturedCount: 1, finalBoard: newBoard });
                                 }
                             }
                         }
@@ -760,13 +803,101 @@
                     }
                 }
             }
-
             return results;
+        }
+
+        /* ------------------ LÓGICA DO XADREZ ------------------ */
+        function getChessMoves(boardState, player) {
+            let moves = [];
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = boardState[r][c];
+                    if (piece && piece.player === player) {
+                        const pieceMoves = getPieceChessMoves(boardState, r, c, piece);
+                        moves.push(...pieceMoves);
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function getPieceChessMoves(boardState, r, c, piece) {
+            let moves = [];
+            const dir = piece.player === 1 ? -1 : 1; // 1 = White (sobe), 2 = Black (desce)
+            const opponent = piece.player === 1 ? 2 : 1;
+
+            const addMoveIfValid = (tr, tc) => {
+                if (tr >= 0 && tr < 8 && tc >= 0 && tc < 8) {
+                    const target = boardState[tr][tc];
+                    if (target === null || target.player === opponent) {
+                        let newBoard = cloneBoard(boardState);
+                        newBoard[tr][tc] = newBoard[r][c];
+                        newBoard[r][c] = null;
+
+                        // Promoção de Peão para Rainha ao chegar ao fim
+                        if (piece.type === 'P' && (tr === 0 || tr === 7)) {
+                            newBoard[tr][tc].type = 'Q';
+                        }
+
+                        moves.push({ from: { r, c }, to: { r: tr, c: tc }, finalBoard: newBoard });
+                        return target === null; // Retorna true se continuar caminhando
+                    }
+                }
+                return false;
+            };
+
+            if (piece.type === 'P') { // Peão
+                let fr = r + dir;
+                if (fr >= 0 && fr < 8 && boardState[fr][c] === null) {
+                    addMoveIfValid(fr, c);
+                    // Mover 2 casas no primeiro lance
+                    let startRow = piece.player === 1 ? 6 : 1;
+                    if (r === startRow && boardState[r + 2 * dir][c] === null) {
+                        addMoveIfValid(r + 2 * dir, c);
+                    }
+                }
+                // Capturas Diagonais
+                for (let dc of [-1, 1]) {
+                    let tc = c + dc;
+                    if (fr >= 0 && fr < 8 && tc >= 0 && tc < 8) {
+                        if (boardState[fr][tc] && boardState[fr][tc].player === opponent) {
+                            addMoveIfValid(fr, tc);
+                        }
+                    }
+                }
+            } else if (piece.type === 'N') { // Cavalo
+                const knightDirs = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+                for (let [dr, dc] of knightDirs) addMoveIfValid(r + dr, c + dc);
+            } else if (piece.type === 'K') { // Rei
+                const kingDirs = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+                for (let [dr, dc] of kingDirs) addMoveIfValid(r + dr, c + dc);
+            } else { // Torre (R), Bispo (B), Rainha (Q)
+                let dirs = [];
+                if (piece.type === 'R' || piece.type === 'Q') dirs.push([-1,0],[1,0],[0,-1],[0,1]);
+                if (piece.type === 'B' || piece.type === 'Q') dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
+
+                for (let [dr, dc] of dirs) {
+                    let step = 1;
+                    while (true) {
+                        let canContinue = addMoveIfValid(r + dr * step, c + dc * step);
+                        if (!canContinue) break;
+                        step++;
+                    }
+                }
+            }
+
+            return moves;
         }
 
         function cloneBoard(boardState) {
             return boardState.map(row => row.map(cell => cell ? { ...cell } : null));
         }
+
+        // Iniciar com Modal
+        document.addEventListener('DOMContentLoaded', () => {
+            showSelectionModal();
+        });
     </script>
 </body>
 </html>
